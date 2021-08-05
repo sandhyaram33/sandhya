@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="66c9271a-f6b8-4a58-bb6f-d6da8d0a4e22" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="f3df7ac6-c774-47f1-80d2-e98ef4916b2d" >
+		<vm:queues >
+			<vm:queue queueName="myfirstvmq" />
+		</vm:queues>
+	</vm:config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="77afdd02-28c7-4c6c-85d9-fb22e78bd9f5" >
+		<wsc:connection wsdlLocation="http://www.dneonline.com/calculator.asmx?wsdl" service="Calculator" port="CalculatorSoap" address="http://www.dneonline.com/calculator.asmx" />
+	</wsc:config>
+	<flow name="vm2Flow" doc:id="80e99989-9a11-4b71-954e-9d59d10aa81c" >
+		<http:listener doc:name="Listener" doc:id="273bd957-81d1-4e06-a941-85619ffae083" config-ref="HTTP_Listener_config" path="/sandhya"/>
+		<set-variable value="#[attributes.queryParams.number1]" doc:name="Set Variable" doc:id="6e04a5b6-e68b-48b1-90a6-d00a436fbead" variableName="number1"/>
+		<ee:transform doc:name="Transform Message" doc:id="2cc429ff-9492-4811-81c9-5e79181397cd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Multiply: {
+		ns0#intA: vars.number1 as Number,
+		ns0#intB: vars.number2 as Number
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="Multiply" doc:name="Consume" doc:id="483560a4-7db3-4a59-901c-d557e4691318" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="9f74f749-2628-49ee-92a0-56e2e3556054" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[attributes.queryParams.number2]" doc:name="Set Variable" doc:id="a35413ef-b8e3-4b7b-a068-669a35ab5055" variableName="number2" />
+	</flow>
+</mule>
